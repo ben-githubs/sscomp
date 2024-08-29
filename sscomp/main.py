@@ -2,10 +2,11 @@
 """ sscomp is a command-line tool that generates a set of static web pages from a series of jinja
 templates.
 """
+import shutil
 import pathlib
 import click
 import yaml
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 
 
 @click.command()
@@ -49,19 +50,30 @@ def compile_website(source_dir: pathlib.Path, dest_dir: pathlib.Path):
         if not item.is_file():
             continue
         # Open file and load contents as string
-        with item.open("r") as f:
-            contents = f.read()
+        try:
+            with item.open("r") as f:
+                contents = f.read()
 
-            # Create template page and store it
-            #   We store the templates in a dictionary. The key is the "relative path" of the
-            #   original template file. We'll also create the compiled HTML file at that path
-            #   relative to 'dest_dir' in a later step.
-            template = env.from_string(contents)
+                # Create template page and store it
+                #   We store the templates in a dictionary. The key is the "relative path" of the
+                #   original template file. We'll also create the compiled HTML file at that path
+                #   relative to 'dest_dir' in a later step.
+                template = env.from_string(contents)
+                relpath = item.relative_to(content_dir)
+                templates[relpath] = template
+        except UnicodeDecodeError:
+            # Means this is not a text file, so we should just copy it to the dest dir
             relpath = item.relative_to(content_dir)
-            templates[relpath] = template
+            templates[relpath] = item
 
     # Render Templates and Save Output Files
     for path, template in templates.items():
-        rendered_page = template.render(**uservars)
-        with (dest_dir / path).open("w") as f:
-            f.write(rendered_page)
+        dest_path = dest_dir / path
+        # Ensure path exists
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        if isinstance(template, Template):
+            rendered_page = template.render(**uservars)
+            with (dest_dir / path).open("w") as f:
+                f.write(rendered_page)
+        elif isinstance(template, pathlib.Path):
+            shutil.copy(template, dest_path)
