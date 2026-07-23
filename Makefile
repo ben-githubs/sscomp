@@ -21,3 +21,6 @@ lint: lint-pylint lint-fmt
 
 fmt:
 	poetry run black --line-length=100 sscomp
+
+test:
+	poetry run pytest

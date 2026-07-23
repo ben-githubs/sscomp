@@ -67,3 +67,25 @@ stylesheets:
     <link rel="stylesheet" href="{{ stylesheets.contact }}">
 </head>
 ```
+
+### Markdown for Content
+
+You can, if you choose, use Markdown for writing site content. We provide a custom Jinja filter called `md2html` which converts Markdown text to valid HTML. **The produced HTML doesn't include any styling or classes; you may need to get creative with your CSS selectors to style them uniquely.**
+
+Simple usage looks like:
+
+```jinja2
+<body>
+  {{ "This paragraph uses **Markdown** to style *some* of the words." | md2html }}
+</body>
+```
+
+If you want to include the content of an entire markdown file, you can. First, ensure the markdown file is in the `templates` folder (**NOT** the `content` folder). Then, you can include it inside a filter block as shown here:
+
+```jinja2
+<body>
+  {% filter md2html %}
+    {% include "my_markdown_file.md" %}
+  {% endfilter %}
+</body>
+```
